@@ -1,0 +1,40 @@
+; $MODE = "UniformRegister"
+
+; $NUM_SPI_PS_INPUT_CNTL = 1
+
+; need to set a stack size for push/pop
+; $SQ_PGM_RESOURCES_PS.STACK_SIZE = 1
+
+; position input R0
+; $SPI_PS_INPUT_CNTL[0].SEMANTIC = 0
+; $SPI_PS_INPUT_CNTL[0].DEFAULT_VAL = 1
+
+; scale height and adjust colors based on height
+
+00 ALU_PUSH_BEFORE: ADDR(32) CNT(6)
+    0  y: ADD            ____, R0.y, 16.0f
+    1  y: MUL            R1.z, PV0.y, 0.03125f
+    2  x: PRED_SETGT_INT ____, 0.01f, R1.z UPDATE_EXEC_MASK UPDATE_PRED
+01 JUMP ADDR(3) VALID_PIX
+02 ALU: ADDR(38) CNT(5)
+    3  x: MOV         R0.x, 0.0f
+       y: MOV         R0.y, 0.0f
+       z: ADD         R0.z, R1.z, 0.9f
+       w: MOV         R0.w, 1.0f
+03 ELSE POP_CNT(1) ADDR(5) VALID_PIX
+04 ALU_POP_AFTER: ADDR(43) CNT(16)
+    4  x: SETGT_DX10  R0.x, 0.8f, R1.z
+       y: MOV         R0.y, 0.0f
+       z: ADD         R0.z, -R1.z, 1.2f
+       w: MOV         R0.w, 0.0f
+       t: MOV         R1.x, 1.0f
+    5  x: MOV         ____, 1.0f
+       y: MOV         ____, R1.z
+       z: MOV         ____, R1.z
+       w: MOV         ____, R1.z
+    6  x: CNDE_INT    R0.x, R0.x, PV0.w, R0.w
+       y: CNDE_INT    R0.y, R0.x, PV0.z, R0.z
+       z: CNDE_INT    R0.z, R0.x, PV0.y, R0.y
+       w: CNDE_INT    R0.w, R0.x, PV0.x, R1.x
+05 EXP_DONE: PIX0, R0
+END_OF_PROGRAM
